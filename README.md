@@ -38,16 +38,16 @@ em formato de listagem com as seguintes informações:
 <ul>
 </ul>
 <li>Cabeçalho:</li>
-<p>◦ Dados do cliente
-◦ Dados da conta bancária
+<p>◦ Dados do cliente<br>
+◦ Dados da conta bancária<br>
 ◦ Data inicial e final</p>
 <li>Listagem das movimentações:</li>
-<p>◦ Data
-◦ Tipo
+<p>◦ Data<br>
+◦ Tipo<br>
 ◦ Valor</p>
 <li>Rodapé:</li>
-<p>◦ Quantidade e valor dos depósitos realizados
-◦ Quantidade e valor dos saques realizados
+<p>◦ Quantidade e valor dos depósitos realizados <br>
+◦ Quantidade e valor dos saques realizados<br>
 ◦ Quantidade e valor das operações de juros aplicados</p>
 </li>
 <li>Sair: Encerra o programa.</li>
