@@ -35,18 +35,21 @@ e não aplicar os juros. Operação disponível apenas para poupança e investim
 operação de tipo 3.</li>
 <li>Extrato: Localizar uma conta bancária, informar data inicial e data final. Mostrar um extrato
 em formato de listagem com as seguintes informações:
-• Cabeçalho:
-◦ Dados do cliente
+<ul>
+</ul>
+<li>Cabeçalho:</li>
+<p>◦ Dados do cliente
 ◦ Dados da conta bancária
-◦ Data inicial e final
-• Listagem das movimentações:
-◦ Data
+◦ Data inicial e final</p>
+<li>Listagem das movimentações:</li>
+<p>◦ Data
 ◦ Tipo
-◦ Valor
-• Rodapé:
-◦ Quantidade e valor dos depósitos realizados
+◦ Valor</p>
+<li>Rodapé:</li>
+<p>◦ Quantidade e valor dos depósitos realizados
 ◦ Quantidade e valor dos saques realizados
-◦ Quantidade e valor das operações de juros aplicados</li>
+◦ Quantidade e valor das operações de juros aplicados</p>
+</li>
 <li>Sair: Encerra o programa.</li>
 </ul> 
 
