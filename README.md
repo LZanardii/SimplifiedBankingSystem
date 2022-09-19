@@ -1,5 +1,4 @@
 <h1 align="center"> SimplifiedBankingSystem </h1>
-
 <p> 
   O trabalho consiste em desenvolver um sistema bancário simplificado para gerenciamento de
 contas bancárias. O código fonte deve ser desenvolvido em Python 3, utilizar o conteúdo
@@ -7,10 +6,11 @@ trabalhado em aula, estar corretamente identado e comentado. O programa deve ser
 objetos. Deve utilizar a biblioteca TkInter como interface gráfica, e para persistência de dados
 deve ser usado um banco SQLite acessado a partir da biblioteca SQLAlchemy.
 </p>
-<h3>Diagrama de Classes:<h3/>
+<h3>Diagrama de Classes:</h3>
+<img src="/DiagramaDeClasses.png">
 <p>O diagrama de classes abaixo representa o estado inicial para o desenvolvimento. É permitido
 adicionar atributos e métodos de acordo com a necessidade.</p>
-<h3>Funcionalidades:<h3/>
+<h3>Funcionalidades:</h3>
 <p>O programa deverá conter as seguintes funcionalidades:</p>
 <ul>
 <li>Cadastrar cliente: Realizar o cadastro de um cliente. Não deve permitir CPF duplicado.</li>

@@ -1,0 +1,17 @@
+import sqlalchemy as db
+import sqlalchemy.orm as orm
+
+engine = db.create_engine('sqlite:///orm.db', echo=False)
+conn = engine.connect()
+
+Base = orm.declarative_base()
+
+class Movimentacao(Base):
+    __tablename__= 'movimentacao'
+    id = db.Column(db.Integer, primary_key=True)
+    id_tipo_movimentacao = db.Column(db.Integer, db.ForeignKey('tipoMovimentacao.id'), nullable=False)
+    id_conta_bancaria = db.Column(db.Integer, db.ForeignKey('contaBancaria.id'), nullable=False)
+    data = db.Column(db.DateTime, nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+
+Base.metadata.create_all(engine)
