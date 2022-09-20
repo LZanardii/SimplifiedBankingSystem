@@ -1,6 +1,6 @@
 import sqlalchemy.orm as orm
 import sqlalchemy as db
-from model import Tipo_conta, Tipo_movimentacao
+from model import TipoConta, TipoMovimentacao
 
 
 engine = db.create_engine('sqlite:///myBank.db', echo=True)
@@ -11,12 +11,12 @@ session = Session()
 
 # Insert
 try:
-    tc1 = Tipo_conta(tipo='Poupança')
-    tc2 = Tipo_conta(tipo='Corrente')
-    tc3 = Tipo_conta(tipo='Investimento')
-    tm1 = Tipo_movimentacao(tipo='Depósito')
-    tm2 = Tipo_movimentacao(tipo='Saque')
-    tm3 = Tipo_movimentacao(tipo='Aplicar Juros')
+    tc1 = TipoConta(tipo='Poupança')
+    tc2 = TipoConta(tipo='Corrente')
+    tc3 = TipoConta(tipo='Investimento')
+    tm1 = TipoMovimentacao(tipo='Depósito')
+    tm2 = TipoMovimentacao(tipo='Saque')
+    tm3 = TipoMovimentacao(tipo='Aplicar Juros')
 
     session.add(tc1)
     session.add(tc2)

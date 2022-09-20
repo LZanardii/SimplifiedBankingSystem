@@ -14,14 +14,14 @@ class Cliente(Base):
     cpf = db.Column(db.String(14), nullable=False)
     data_nascimento = db.Column(db.Date, nullable=False)
 
-class Conta_bancaria(Base):
+class ContaBancaria(Base):
     __tablename__= 'contaBancaria'
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
     tipo_conta_id = db.Column(db.Integer, db.ForeignKey('tipoConta.id'), nullable=False)
     saldo_inicial = db.Column(db.Float, nullable=False)
     
-class Tipo_conta(Base):
+class TipoConta(Base):
     __tablename__= 'tipoConta'
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String, nullable=False)
@@ -34,21 +34,21 @@ class Movimentacao(Base):
     data = db.Column(db.DateTime, nullable=False)
     valor = db.Column(db.Float, nullable=False)
 
-class Tipo_movimentacao(Base):
+class TipoMovimentacao(Base):
     __tablename__= 'tipoMovimentacao'
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(50), nullable=False )
 
-Cliente.conta_bancaria = orm.relationship('Conta_bancaria', back_populates='cliente')
-Conta_bancaria.cliente = orm.relationship('Cliente', back_populates='conta_bancaria')
+Cliente.conta_bancaria = orm.relationship('ContaBancaria', back_populates='cliente')
+ContaBancaria.cliente = orm.relationship('Cliente', back_populates='conta_bancaria')
 
-Conta_bancaria.tipo_conta = orm.relationship('Tipo_conta', back_populates='contas')
-Tipo_conta.contas = orm.relationship('Conta_bancaria', back_populates='tipo_conta')
+ContaBancaria.tipo_conta = orm.relationship('TipoConta', back_populates='contas')
+TipoConta.contas = orm.relationship('ContaBancaria', back_populates='tipo_conta')
 
-Conta_bancaria.movimentacoes = orm.relationship('Movimentacao', back_populates='conta')
-Movimentacao.conta = orm.relationship('Conta_bancaria', back_populates='movimentacoes')
+ContaBancaria.movimentacoes = orm.relationship('Movimentacao', back_populates='conta')
+Movimentacao.conta = orm.relationship('ContaBancaria', back_populates='movimentacoes')
 
-Movimentacao.tipo = orm.relationship('Tipo_movimentacao', back_populates='movimentacoes')
-Tipo_movimentacao.movimentacoes = orm.relationship('Movimentacao', back_populates='tipo')
+Movimentacao.tipo = orm.relationship('TipoMovimentacao', back_populates='movimentacoes')
+TipoMovimentacao.movimentacoes = orm.relationship('Movimentacao', back_populates='tipo')
 
 Base.metadata.create_all(engine)
