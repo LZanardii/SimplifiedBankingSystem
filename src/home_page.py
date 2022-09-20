@@ -7,6 +7,7 @@ import tkinter.ttk as ttk
 from tkinter import *
 from turtle import bgcolor, onclick
 import cadastro_usuario_page
+import criar_nova_conta_page
 
 class HomePage(tk.Tk):
     def __init__(self) -> None:
@@ -30,7 +31,8 @@ class HomePage(tk.Tk):
     def abrir_cadastro_click(self):
         cadastro_usuario_page.CadastroUsuario()
     
-    # def criar_nova_conta_click(self):
+    def criar_nova_conta_click(self):
+        criar_nova_conta_page.CriarNovaConta()
         
     
 if __name__=='__main__':
