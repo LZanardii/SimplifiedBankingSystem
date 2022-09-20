@@ -8,16 +8,15 @@ Base = orm.declarative_base()
 
 class Cliente(Base):
     __tablename__= 'cliente'
-    id = db.Column(db.Integer, primary_key=True)
+    cpf = db.Column(db.String(14), primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     sexo = db.Column(db.CHAR, nullable=False)
-    cpf = db.Column(db.String(14), nullable=False)
     data_nascimento = db.Column(db.Date, nullable=False)
 
 class ContaBancaria(Base):
     __tablename__= 'contaBancaria'
     id = db.Column(db.Integer, primary_key=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.cpf'), nullable=False)
     tipo_conta_id = db.Column(db.Integer, db.ForeignKey('tipoConta.id'), nullable=False)
     saldo_inicial = db.Column(db.Float, nullable=False)
     
