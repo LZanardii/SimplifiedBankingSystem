@@ -22,7 +22,7 @@ class HomePage(tk.Tk):
         middle_frame = Frame(self).pack(fill=BOTH, expand = True)
         down_frame = Frame(self).pack(side=BOTTOM, expand=True)
         btn_cadastro = Button(up_frame, text='Cadastrar usuário', pady=5, border=3, bg="#02c72a", command=self.abrir_cadastro_click).place(relx=.5, rely=.4, anchor=CENTER)
-        btn_nova_conta = Button(middle_frame, text='Criar nova conta', pady=5, border=3, bg="#02c72a").place(relx=.5, rely=.5, anchor=CENTER)
+        btn_nova_conta = Button(middle_frame, text='Criar nova conta', pady=5, border=3, bg="#02c72a", command=self.criar_nova_conta_click).place(relx=.5, rely=.5, anchor=CENTER)
         btn_login = Button(down_frame, text='Login em conta existente', pady=5, border=3, bg="#02c72a").place(relx=.5, rely=.6, anchor=CENTER)
         #TODO
         #Uma coisa que quero fazer quando tivermos o trabalho mais garantido de repente é adicionar uma imagem
