@@ -1,3 +1,4 @@
+from cgitb import text
 import tkinter as tk
 from tkinter import BOTTOM, LEFT, RIGHT, TOP, ttk
 from ast import Raise
@@ -15,7 +16,9 @@ import math
   
 
 class tkinterApp(tk.Tk):
-     
+
+    temp_login_data = {}
+
     def __init__(self, *args, **kwargs):
          
         tk.Tk.__init__(self, *args, **kwargs)
@@ -29,7 +32,7 @@ class tkinterApp(tk.Tk):
         container.grid_columnconfigure(0, weight = 1)
         self.frames = {} 
   
-        for F in (HomePage, CadastroUsuario, CriarNovaConta):
+        for F in (HomePage, CadastroUsuario, CriarNovaConta, LoginConta):
   
             frame = F(container, self)
   
@@ -66,7 +69,7 @@ class HomePage(tk.Frame):
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Criar nova conta', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(CriarNovaConta))
         self.create_widget(tk.Label)
-        self.create_widget(tk.Button, text='Login em conta existente', pady=5, border=3, bg="#02c72a")
+        self.create_widget(tk.Button, text='Login em conta existente', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(LoginConta))
 
 class CadastroUsuario(tk.Frame):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
@@ -167,7 +170,6 @@ class CriarNovaConta(tk.Frame):
         self.create_widget(tk.Label, text='Cpf: ')
         self.create_widget(tk.Entry, textvariable=self.conta_bancaria.get('cpf_cliente'))
         self.create_widget(tk.Label, text='Tipo de conta: ')
-        combo_type = None
         combo_type = self.create_widget(ttk.Combobox, textvariable=self.conta_bancaria.get('tipo_conta'), )
         combo_type['values']=('Poupança', 'Corrente', 'Investimento')
         combo_type['state']='readonly'
@@ -178,7 +180,6 @@ class CriarNovaConta(tk.Frame):
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
        
-    
     def validateAll(self):
         validation = True
         validation = (validation and self.validate_cpf(list(self.conta_bancaria.items())[0][1].get())
@@ -190,31 +191,36 @@ class CriarNovaConta(tk.Frame):
     def validate_cpf(self, cpf):
         if validate_cpf(cpf):
             try:
+                Session = orm.sessionmaker(bind=self.engine)
+                self.session = Session()
                 client = self.session.query(model.Cliente.nome).where(model.Cliente.cpf == cpf)
                 test = client[0]
                 try:
                     alreay_exists_account = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
                     test_account = alreay_exists_account[0]
                     messagebox.showwarning('Warning', 'O cpf informado já possui uma conta cadastrada!')
+                    self.session.close()
                     return False
                 except:
+                    self.session.close()
                     return True
             except:
-                messagebox.showwarning('Warning', 'Verifique se o cpf pertence há um cliente já cadastrado!')
+                messagebox.showwarning('Warning', 'Verifique se o cpf pertence a um cliente já cadastrado!')
+                self.session.close()
                 return False
         else:
             messagebox.showwarning('Warning', 'Insira um cpf válido!')
             return False
     
     def validate_init_saldo(self, saldo):
-        if saldo >= 0:
-            if not math.isnan(saldo):
+        if not math.isnan(saldo):
+            if saldo >= 0:
                 return True
             else:
-                messagebox.showwarning('Warning', 'Informe um valor de saldo válido!')
+                messagebox.showwarning('Warning', 'Deposite um saldo inicial válido (maior ou igual a 0)!')
                 return False
         else:
-            messagebox.showwarning('Warning', 'Deposite um saldo inicial válido (maior ou igual a 0)!')
+            messagebox.showwarning('Warning', 'Informe um saldo inicial válido!')
             return False
     
     def validate_tipo_conta(self, tipo):
@@ -240,5 +246,59 @@ class CriarNovaConta(tk.Frame):
         self.session.close()
         messagebox.showinfo('Confirmação', 'A conta foi criada com sucesso!')
 
+class LoginConta(tk.Frame):
+    engine = db.create_engine('sqlite:///myBank.db', echo=True)
+    conn = engine.connect()
+    ctr = {}
+    login = {}
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        login = {
+            'cpf_cliente': tk.StringVar()
+        }
+        self.ctr = controller
+        self.create_widgets()
+
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+    
+    def create_widgets(self):
+        self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
+        self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
+        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
+    
+    def validate_cpf_login(self):
+        cpf = list(self.login.items())[0][1].get()
+        if validate_cpf(cpf):
+            try:
+                Session = orm.sessionmaker(bind=self.engine)
+                self.session = Session()
+                client = self.session.query(model.Cliente.nome).where(model.Cliente.cpf == cpf)
+                test = client[0]
+                try:
+                    alreay_exists_account = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
+                    test_account = alreay_exists_account[0]
+                    self.session.close()
+                    return True
+                except:
+                    messagebox.showwarning('Warning', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                    self.session.close()
+                    return False
+            except:
+                messagebox.showwarning('Warning', 'Verifique se o cpf pertence a um cliente já cadastrado!')
+                self.session.close()
+                return False
+        else:
+            messagebox.showwarning('Warning', 'Insira um cpf válido!')
+            return False 
+
 app = tkinterApp()
 app.mainloop()
+
