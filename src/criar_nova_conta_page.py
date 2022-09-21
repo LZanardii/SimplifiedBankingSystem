@@ -1,11 +1,7 @@
-import numbers
-from sre_parse import State
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing_extensions import IntVar, Self
 import sqlalchemy as db
 import sqlalchemy.orm as orm
-
 
 class CriarNovaConta(tk.Tk):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
@@ -25,7 +21,6 @@ class CriarNovaConta(tk.Tk):
         self.session = Session()
 
         self.create_widgets()
-
     
     def create_widget(self, widget_type, **kwargs):
         elem = widget_type(self)
