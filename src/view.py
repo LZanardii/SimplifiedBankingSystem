@@ -260,7 +260,7 @@ class LoginConta(tk.Frame):
             'cpf_cliente': tk.StringVar()
         }
         self.ctr = controller
-        self.create_widgets()
+       
 
     def create_widget(self, widget_type, **kwargs):
         elem = widget_type(self)
