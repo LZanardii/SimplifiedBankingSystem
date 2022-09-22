@@ -17,8 +17,6 @@ import math
 
 class tkinterApp(tk.Tk):
 
-    temp_login_data = {}
-
     def __init__(self, *args, **kwargs):
          
         tk.Tk.__init__(self, *args, **kwargs)
@@ -98,6 +96,7 @@ class CadastroUsuario(tk.Frame):
         return elem
 
     def create_widgets(self):
+        self.create_widget(tk.Label)
         self.create_widget(tk.Label, text='Nome')
         self.create_widget(tk.Entry, textvariable=self.cliente.get('nome'))
         self.create_widget(tk.Label, text='CPF')
@@ -133,7 +132,6 @@ class CadastroUsuario(tk.Frame):
             session.commit()
             session.close()
             messagebox.showinfo('Sucesso!','Cliente cadastrado com sucesso.')
-            self.limpa_dados_forms()
                 
         except Exception as e:
             messagebox.showwarning('Cuidado!', '''Erro ao cadastrar novo Cliente! Revise os dados inseridos.
@@ -167,6 +165,7 @@ class CriarNovaConta(tk.Frame):
         return elem
 
     def create_widgets(self):
+        self.create_widget(tk.Label)
         self.create_widget(tk.Label, text='Cpf: ')
         self.create_widget(tk.Entry, textvariable=self.conta_bancaria.get('cpf_cliente'))
         self.create_widget(tk.Label, text='Tipo de conta: ')
@@ -198,18 +197,18 @@ class CriarNovaConta(tk.Frame):
                 try:
                     alreay_exists_account = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
                     test_account = alreay_exists_account[0]
-                    messagebox.showwarning('Warning', 'O cpf informado já possui uma conta cadastrada!')
+                    messagebox.showwarning('Cuidado!', 'O cpf informado já possui uma conta cadastrada!')
                     self.session.close()
                     return False
-                except:
+                except Exception:
                     self.session.close()
                     return True
-            except:
-                messagebox.showwarning('Warning', 'Verifique se o cpf pertence a um cliente já cadastrado!')
+            except Exception:
+                messagebox.showwarning('Cuidado!', 'Verifique se o cpf pertence a um cliente já cadastrado!')
                 self.session.close()
                 return False
         else:
-            messagebox.showwarning('Warning', 'Insira um cpf válido!')
+            messagebox.showwarning('Cuidado!', 'Insira um cpf válido!')
             return False
     
     def validate_init_saldo(self, saldo):
@@ -217,15 +216,15 @@ class CriarNovaConta(tk.Frame):
             if saldo >= 0:
                 return True
             else:
-                messagebox.showwarning('Warning', 'Deposite um saldo inicial válido (maior ou igual a 0)!')
+                messagebox.showwarning('Cuidado!', 'Deposite um saldo inicial válido (maior ou igual a 0)!')
                 return False
         else:
-            messagebox.showwarning('Warning', 'Informe um saldo inicial válido!')
+            messagebox.showwarning('Cuidado!', 'Informe um saldo inicial válido!')
             return False
     
     def validate_tipo_conta(self, tipo):
         if tipo == '':
-            messagebox.showwarning('Warning', 'Selecione um tipo de conta!')
+            messagebox.showwarning('Cuidado!', 'Selecione um tipo de conta!')
             return False
         else:
             return True
@@ -252,9 +251,12 @@ class LoginConta(tk.Frame):
     ctr = {}
     login = {}
 
+    cliente = {}
+    cliente_conta = {}
+
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        login = {
+        self.login = {
             'cpf_cliente': tk.StringVar()
         }
         self.ctr = controller
@@ -269,30 +271,45 @@ class LoginConta(tk.Frame):
         return elem
     
     def create_widgets(self):
-        self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
-        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
-        self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
+        if (len(self.cliente_conta) < 0):
+            self.create_widget(tk.Label)
+            self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
+            self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
+            self.create_widget(tk.Label)
+            self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
+        elif (len(self.cliente_conta) > 0):
+            self.create_widget(tk.Label)
+            self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
+            self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
+            self.create_widget(tk.Label)
+            self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
+        self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
-    
+        
+
     def validate_cpf_login(self):
         cpf = list(self.login.items())[0][1].get()
         if validate_cpf(cpf):
             try:
-                Session = orm.sessionmaker(bind=self.engine)
-                self.session = Session()
-                client = self.session.query(model.Cliente.nome).where(model.Cliente.cpf == cpf)
-                test = client[0]
+                session = orm.sessionmaker(bind=self.engine)
+                self.session = session()
+                cliente = self.session.query(model.Cliente).where(model.Cliente.cpf == cpf)
+                cliente[0]
                 try:
-                    alreay_exists_account = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
-                    test_account = alreay_exists_account[0]
+                    conta_cliente = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
+                    conta_cliente[0]
+                    messagebox.showwarning('Sucesso!', 'blablabla')
+
                     self.session.close()
                     return True
-                except:
-                    messagebox.showwarning('Warning', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                except Exception as e:
+                    print(e)
+                    messagebox.showwarning('Cuidado!', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
                     self.session.close()
                     return False
-            except:
-                messagebox.showwarning('Warning', 'Verifique se o cpf pertence a um cliente já cadastrado!')
+            except Exception as e:
+                print(e)
+                messagebox.showwarning('Cuidado!', 'CPF não cadastrado!')
                 self.session.close()
                 return False
         else:
