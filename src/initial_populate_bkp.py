@@ -20,7 +20,7 @@ try:
     tm3 = TipoMovimentacao(tipo='Aplicar Juros')
     data = datetime(2001, 1, 1)
     cl2 = Cliente(cpf='03690128013', nome='Pedro', sexo='M', data_nascimento=data)
-    cl3 = Cliente(cpf='05046035073', nome='Pedro', sexo='M', data_nascimento=data)
+    cl3 = Cliente(cpf='05046035073', nome='Leonardo', sexo='M', data_nascimento=data)
     session.add(tc1)
     session.add(tc2)
     session.add(tc3)
