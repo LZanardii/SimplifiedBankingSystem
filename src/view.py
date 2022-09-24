@@ -25,7 +25,7 @@ class MyBankApp(tk.Tk):
         container.grid_columnconfigure(0, weight = 1)
         self.frames = {} 
   
-        for F in (HomePage, CadastroUsuario, CriarNovaConta, Operacoes, Deposito):
+        for F in (HomePage, CadastroUsuario, CriarNovaConta, Operacoes, Deposito, Saque, AplicarJuros, Extrato):
   
             frame = F(container, self)
   
@@ -235,7 +235,9 @@ class CriarNovaConta(tk.Frame):
         self.session.add(conta_final)
         self.session.commit()
         self.session.close()
-        messagebox.showinfo('Confirmação', 'A conta foi criada com sucesso!')        
+        messagebox.showinfo('Confirmação', 'A conta foi criada com sucesso!')  
+
+
 class Operacoes(tk.Frame):
     prt = {}
     ctr = {}
@@ -259,15 +261,17 @@ class Operacoes(tk.Frame):
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Depósito', pady=5, border=3, bg="#02c72a",command = lambda : self.ctr.show_frame(Deposito))
         self.create_widget(tk.Label)
-        self.create_widget(tk.Button, text='Saque', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(HomePage))
+        self.create_widget(tk.Button, text='Saque', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(Saque))
         self.create_widget(tk.Label)
-        self.create_widget(tk.Button, text='Aplicar Juros', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(HomePage))
+        self.create_widget(tk.Button, text='Aplicar Juros', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(AplicarJuros))
         self.create_widget(tk.Label)
-        self.create_widget(tk.Button, text='Extrato', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(HomePage))
+        self.create_widget(tk.Button, text='Extrato', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(Extrato))
         self.create_widget(tk.Label)
-        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))     
+        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))  
+
+
 class Deposito(tk.Frame):
-    engine = db.create_engine('sqlite:///myBank.db', echo=True)
+    engine = db.create_engine('sqlite:///myBank.db', echo=False)
     conn = engine.connect()
     prt = {}
     ctr = {}
@@ -284,7 +288,7 @@ class Deposito(tk.Frame):
         }
         
         self.deposito = {
-            'deposito': tk.IntVar(),
+            'deposito': tk.DoubleVar(),
         }
     
         self.prt = parent
@@ -302,7 +306,7 @@ class Deposito(tk.Frame):
     
     def create_widgets(self):
         self.create_widget(tk.Label)
-        self.create_widget(tk.Label, text='Informe o cpf que deseja realizar o depósito e \n automagicamente os campos abaixo serão preenchidos' )
+        self.create_widget(tk.Label, text='Informe o cpf da conta que deseja realizar o depósito e \n automagicamente os campos abaixo serão preenchidos' )
         self.create_widget(tk.Label, text='Cpf:' )
         self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente'))
         self.create_widget(tk.Label)
@@ -314,6 +318,9 @@ class Deposito(tk.Frame):
         self.create_widget(tk.Label)
         self.create_widget(tk.Label, text='Tipo de conta:' )
         self.create_widget(tk.Entry, textvariable=self.login.get('tipo_conta'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Saldo atual:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('saldo_inicial'), state='readonly' )
         self.create_widget(tk.Label)
         self.create_widget(tk.Label, text='Valor a Depositar:' )
         self.create_widget(tk.Entry, textvariable=self.deposito.get('deposito'))
@@ -333,7 +340,13 @@ class Deposito(tk.Frame):
                 session = orm.sessionmaker(bind=self.engine)
                 self.session = session()
                 saldo = list(self.login.items())[4][1].get()
-                self.session.query(model.ContaBancaria).where(model.ContaBancaria.id == list(self.login.items())[2][1].get()).update({model.ContaBancaria.saldo_inicial: saldo + valor_a_depositar})
+                novo_saldo = saldo + valor_a_depositar
+                self.session.query(model.ContaBancaria).where(model.ContaBancaria.id == list(self.login.items())[2][1].get()).update({model.ContaBancaria.saldo_inicial: novo_saldo})
+                deposito = model.Movimentacao(tipo_movimentacao_id=1, conta_bancaria_id=list(self.login.items())[2][1].get(), data=datetime.today(), valor=valor_a_depositar)
+                self.session.add(deposito)
+                self.session.commit()
+                self.session.close()
+                messagebox.showinfo('Sucesso',f'A operação foi realizada com êxito. O seu novo saldo é de R${novo_saldo}')
             except Exception as e:
                 print(e)  
        
@@ -345,26 +358,26 @@ class Deposito(tk.Frame):
                 session = orm.sessionmaker(bind=self.engine)
                 self.session = session()
                 cliente = self.session.query(model.Cliente.cpf, model.Cliente.nome,).where(model.Cliente.cpf == cpf)
-                cliente[0]
+                a = cliente[0]
                 list(self.login.items())[1][1].set(cliente[0].nome)
                 try:
                     conta_cliente = self.session.query(model.ContaBancaria.tipo_conta_id, model.ContaBancaria.id, model.ContaBancaria.saldo_inicial).where(model.ContaBancaria.cliente_id == cpf)
-                    conta_cliente[0]                  
+                    a = conta_cliente[0]                  
                     list(self.login.items())[2][1].set(conta_cliente[0].id)
                     list(self.login.items())[3][1].set(self.busca_tipo_conta(conta_cliente[0].tipo_conta_id))
                     list(self.login.items())[4][1].set(conta_cliente[0].saldo_inicial)
                     messagebox.showinfo('Sucesso!', 'Login efetuado.')
                     self.session.close()
                 except Exception:
-                    messagebox.showwarning('Cuidado!', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                    messagebox.showwarning('Login falhou:', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
                     self.session.close()
                     return False
             except Exception:
-                messagebox.showwarning('Cuidado!', 'CPF não cadastrado!')
+                messagebox.showwarning('Login falhou:', 'CPF não cadastrado!')
                 self.session.close()
                 return False
         else:
-            messagebox.showwarning('Warning', 'Insira um cpf válido!')
+            messagebox.showwarning('Login falhou:', 'Insira um cpf válido!')
             return False 
     
     def busca_tipo_conta(self, id):
@@ -373,9 +386,369 @@ class Deposito(tk.Frame):
         tipo_conta = self.session.query(model.TipoConta.tipo).where(model.TipoConta.id == id)
         self.session.close()
         return tipo_conta[0].tipo
+
+class Saque(tk.Frame):
+    engine = db.create_engine('sqlite:///myBank.db', echo=False)
+    conn = engine.connect()
+    prt = {}
+    ctr = {}
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
         
+        self.login = {
+            'cpf_cliente': tk.StringVar(),
+            'nome': tk.StringVar(),
+            'conta': tk.StringVar(),
+            'tipo_conta': tk.IntVar(),
+            'saldo_inicial': tk.DoubleVar()
+        }
+        
+        self.saque = {
+            'saque': tk.DoubleVar(),
+        }
+    
+        self.prt = parent
+        self.ctr = controller
+        self.create_widgets()
+       
+
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+    
+    def create_widgets(self):
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Informe o cpf da conta que deseja realizar o saque e \n automagicamente os campos abaixo serão preenchidos' )
+        self.create_widget(tk.Label, text='Cpf:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente'))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Nome:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('nome'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('conta'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Tipo de conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('tipo_conta'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Saldo disponível:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('saldo_inicial'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Valor a sacar:' )
+        self.create_widget(tk.Entry, textvariable=self.saque.get('saque'))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Realizar saque', pady=5, border=3, command = self.sacar)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Validar Conta', pady=5, border=3, command =self.validate_cpf_login_saque)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(Operacoes))
+ 
+    def sacar(self):
+        valor_a_sacar = list(self.saque.items())[0][1].get()
+        if (valor_a_sacar == 0):
+            messagebox.showwarning('Cuidado!', 'O valor de saque está zerado.')
+        else:
+            try:
+                
+                saldo = list(self.login.items())[4][1].get()
+                if valor_a_sacar > saldo:
+                    messagebox.showerror('Saldo insuficiente', 'Parece que o valor que você deseja sacar é maior do que o saldo disponível! Tente novamente.')
+                else:
+                    novo_saldo = saldo - valor_a_sacar
+                    session = orm.sessionmaker(bind=self.engine)
+                    self.session = session()
+                    self.session.query(model.ContaBancaria).where(model.ContaBancaria.id == list(self.login.items())[2][1].get()).update({model.ContaBancaria.saldo_inicial: novo_saldo})
+                    saque = model.Movimentacao(tipo_movimentacao_id=2, conta_bancaria_id=list(self.login.items())[2][1].get(), data=datetime.today(), valor=valor_a_sacar)
+                    self.session.add(saque)
+                    self.session.commit()
+                    self.session.close()
+                    messagebox.showinfo('Sucesso',f'Operação aprovada! O dinheiro será entregue em seguida.\n O seu novo saldo é de R${novo_saldo}')
+                    list(self.login.items())[4][1].set(novo_saldo)
+            except Exception as e:
+                print(e)  
+       
+
+    def validate_cpf_login_saque(self):
+        cpf = list(self.login.items())[0][1].get()
+        if validate_cpf(cpf):
+            try:
+                session = orm.sessionmaker(bind=self.engine)
+                self.session = session()
+                cliente = self.session.query(model.Cliente.cpf, model.Cliente.nome,).where(model.Cliente.cpf == cpf)
+                a = cliente[0]
+                try:
+                    conta_cliente = self.session.query(model.ContaBancaria.tipo_conta_id, model.ContaBancaria.id, model.ContaBancaria.saldo_inicial).where(model.ContaBancaria.cliente_id == cpf)
+                    a = conta_cliente[0]  
+                    if conta_cliente[0].tipo_conta_id == 3:
+                        messagebox.showwarning('Operação não autorizada:', 'A funcionalidade de saque está disponível apenas para contas do tipo corrente ou poupança!')
+                    else:
+                        list(self.login.items())[1][1].set(cliente[0].nome)
+                        list(self.login.items())[2][1].set(conta_cliente[0].id)
+                        list(self.login.items())[3][1].set(self.busca_tipo_conta(conta_cliente[0].tipo_conta_id))
+                        list(self.login.items())[4][1].set(conta_cliente[0].saldo_inicial)
+                        messagebox.showinfo('Sucesso!', 'Login efetuado.')
+                        self.session.close()
+                except Exception:
+                    messagebox.showwarning('Login falhou:', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                    self.session.close()
+                    return False
+            except Exception:
+                messagebox.showwarning('Login falhou:', 'CPF não cadastrado!')
+                self.session.close()
+                return False
+        else:
+            messagebox.showwarning('Login falhou:', 'Insira um cpf válido!')
+            return False 
+    
+    def busca_tipo_conta(self, id):
+        session = orm.sessionmaker(bind=self.engine)
+        self.session = session()
+        tipo_conta = self.session.query(model.TipoConta.tipo).where(model.TipoConta.id == id)
+        self.session.close()
+        return tipo_conta[0].tipo
 
 
+class AplicarJuros(tk.Frame):
+    engine = db.create_engine('sqlite:///myBank.db', echo=False)
+    conn = engine.connect()
+    prt = {}
+    ctr = {}
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        
+        self.login = {
+            'cpf_cliente': tk.StringVar(),
+            'nome': tk.StringVar(),
+            'conta': tk.StringVar(),
+            'tipo_conta': tk.IntVar(),
+            'saldo_inicial': tk.DoubleVar()
+        }
+        
+        self.juros = {
+            'juros': tk.DoubleVar(),
+        }
+    
+        self.prt = parent
+        self.ctr = controller
+        self.create_widgets()
+       
+
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+    
+    def create_widgets(self):
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Informe o cpf da conta que deseja aplicar juros e \n automagicamente os campos abaixo serão preenchidos' )
+        self.create_widget(tk.Label, text='Cpf:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente'))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Nome:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('nome'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('conta'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Tipo de conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('tipo_conta'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Saldo atual:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('saldo_inicial'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Taxa de juros a aplicar:' )
+        self.create_widget(tk.Entry, textvariable=self.juros.get('juros'))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Aplicar juros', pady=5, border=3, command = self.aplicar_juros)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Validar Conta', pady=5, border=3, command =self.validate_cpf_login_juros)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(Operacoes))
+ 
+    def aplicar_juros(self):
+        taxa_juros = list(self.juros.items())[0][1].get()
+        if (taxa_juros == 0):
+            messagebox.showwarning('Cuidado!', 'A o valor da taxa de juros está zerado.')
+        else:
+            try:
+                saldo = list(self.login.items())[4][1].get()
+                if saldo == 0:
+                    messagebox.showerror('Saldo insuficiente', 'Desculpe, mas não há como aplicar juros sobre saldo zerado.')
+                else:
+                    novo_saldo = saldo + ((saldo/100)*taxa_juros)
+                    session = orm.sessionmaker(bind=self.engine)
+                    self.session = session()
+                    self.session.query(model.ContaBancaria).where(model.ContaBancaria.id == list(self.login.items())[2][1].get()).update({model.ContaBancaria.saldo_inicial: novo_saldo})
+                    juros = model.Movimentacao(tipo_movimentacao_id=3, conta_bancaria_id=list(self.login.items())[2][1].get(), data=datetime.today(), valor=taxa_juros)
+                    self.session.add(juros)
+                    self.session.commit()
+                    self.session.close()
+                    messagebox.showinfo('Sucesso',f'Operação aprovada! Seu dinheiro já está sendo acrescido da taxa de juros.\n O seu novo saldo é de R${novo_saldo}')
+                    list(self.login.items())[4][1].set(novo_saldo)
+            except Exception as e:
+                print(e)  
+       
+
+    def validate_cpf_login_juros(self):
+        cpf = list(self.login.items())[0][1].get()
+        if validate_cpf(cpf):
+            try:
+                session = orm.sessionmaker(bind=self.engine)
+                self.session = session()
+                cliente = self.session.query(model.Cliente.cpf, model.Cliente.nome,).where(model.Cliente.cpf == cpf)
+                a = cliente[0]
+                try:
+                    conta_cliente = self.session.query(model.ContaBancaria.tipo_conta_id, model.ContaBancaria.id, model.ContaBancaria.saldo_inicial).where(model.ContaBancaria.cliente_id == cpf)
+                    a = conta_cliente[0]  
+                    if conta_cliente[0].tipo_conta_id != 3:
+                        messagebox.showwarning('Operação não autorizada:', 'A funcionalidade de aplicação de juros está disponível apenas para contas de Investimento!')
+                    else:
+                        list(self.login.items())[1][1].set(cliente[0].nome)
+                        list(self.login.items())[2][1].set(conta_cliente[0].id)
+                        list(self.login.items())[3][1].set(self.busca_tipo_conta(conta_cliente[0].tipo_conta_id))
+                        list(self.login.items())[4][1].set(conta_cliente[0].saldo_inicial)
+                        messagebox.showinfo('Sucesso!', 'Login efetuado.')
+                        self.session.close()
+                except Exception:
+                    messagebox.showwarning('Login falhou:', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                    self.session.close()
+                    return False
+            except Exception:
+                messagebox.showwarning('Login falhou:', 'CPF não cadastrado!')
+                self.session.close()
+                return False
+        else:
+            messagebox.showwarning('Login falhou:', 'Insira um cpf válido!')
+            return False 
+    
+    def busca_tipo_conta(self, id):
+        session = orm.sessionmaker(bind=self.engine)
+        self.session = session()
+        tipo_conta = self.session.query(model.TipoConta.tipo).where(model.TipoConta.id == id)
+        self.session.close()
+        return tipo_conta[0].tipo
+
+class Extrato(tk.Frame):
+    engine = db.create_engine('sqlite:///myBank.db', echo=False)
+    conn = engine.connect()
+    prt = {}
+    ctr = {}
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        
+        self.login = {
+            'cpf_cliente': tk.StringVar(),
+            'nome': tk.StringVar(),
+            'conta': tk.StringVar(),
+            'tipo_conta': tk.IntVar(),
+            'saldo_inicial': tk.DoubleVar()
+        }
+        
+        self.extrato = {
+            'inicio': tk.StringVar(),
+            'fim': tk.StringVar()
+        }
+    
+        self.prt = parent
+        self.ctr = controller
+        self.create_widgets()
+       
+
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+    
+    def create_widgets(self):
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Informe o cpf da conta que deseja tirar extrato:' )
+        self.create_widget(tk.Label, text='Cpf:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente'))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Nome:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('nome'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('conta'), state='readonly')
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Tipo de conta:' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('tipo_conta'), state='readonly' )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Data inicial')
+        self.create_widget(DateEntry, textvariable=self.extrato.get('inicio'))
+        self.create_widget(tk.Label, text='Data final')
+        self.create_widget(DateEntry, textvariable=self.extrato.get('fim'))
+        self.create_widget(tk.Button, text='Tirar extrato', pady=5, border=3, command = self.tirar_extrato)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Validar Conta', pady=5, border=3, command =self.validate_cpf_login_extrato)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(Operacoes))
+ 
+    def tirar_extrato(self):
+            dt_inicio = list(self.extrato.items())[0][1].get()
+            dt_fim = list(self.extrato.items())[1][1].get()
+            conta = list(self.login.items())[2][1].get()
+            if dt_inicio == '' or dt_fim == '':
+                messagebox.showwarning('Aviso','Data de início e fim do extrato não podem estar em branco!')
+            else:
+                try:
+                    session = orm.sessionmaker(bind=self.engine)
+                    self.session = session()
+                    extrato = self.session.query(model.Movimentacao.data, model.Movimentacao.tipo_movimentacao_id, model.Movimentacao.valor).where(model.Movimentacao.conta_bancaria_id == conta)#and data do bgl estiver entre data inicial e final
+                    messagebox.showinfo('Aviso',f'{extrato}')
+                    self.session.close()
+                except Exception as e:
+                    print(e)  
+       
+
+    def validate_cpf_login_extrato(self):
+        cpf = list(self.login.items())[0][1].get()
+        if validate_cpf(cpf):
+            try:
+                session = orm.sessionmaker(bind=self.engine)
+                self.session = session()
+                cliente = self.session.query(model.Cliente.cpf, model.Cliente.nome,).where(model.Cliente.cpf == cpf)
+                a = cliente[0]
+                list(self.login.items())[1][1].set(cliente[0].nome)
+                try:
+                    conta_cliente = self.session.query(model.ContaBancaria.tipo_conta_id, model.ContaBancaria.id, model.ContaBancaria.saldo_inicial).where(model.ContaBancaria.cliente_id == cpf)
+                    a = conta_cliente[0]                  
+                    list(self.login.items())[2][1].set(conta_cliente[0].id)
+                    list(self.login.items())[3][1].set(self.busca_tipo_conta(conta_cliente[0].tipo_conta_id))
+                    list(self.login.items())[4][1].set(conta_cliente[0].saldo_inicial)
+                    messagebox.showinfo('Sucesso!', 'Login efetuado.')
+                    self.session.close()
+                except Exception:
+                    messagebox.showwarning('Login falhou:', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
+                    self.session.close()
+                    return False
+            except Exception:
+                messagebox.showwarning('Login falhou:', 'CPF não cadastrado!')
+                self.session.close()
+                return False
+        else:
+            messagebox.showwarning('Login falhou:', 'Insira um cpf válido!')
+            return False 
+    
+    def busca_tipo_conta(self, id):
+        session = orm.sessionmaker(bind=self.engine)
+        self.session = session()
+        tipo_conta = self.session.query(model.TipoConta.tipo).where(model.TipoConta.id == id)
+        self.session.close()
+        return tipo_conta[0].tipo
 
 app = MyBankApp()
 app.mainloop()
