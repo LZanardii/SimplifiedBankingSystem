@@ -16,7 +16,7 @@ class Cliente(Base):
 class ContaBancaria(Base):
     __tablename__= 'contaBancaria'
     id = db.Column(db.Integer, primary_key=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.cpf'), nullable=False)
+    cliente_id = db.Column(db.String(14), db.ForeignKey('cliente.cpf'), nullable=False)
     tipo_conta_id = db.Column(db.Integer, db.ForeignKey('tipoConta.id'), nullable=False)
     saldo_inicial = db.Column(db.Float, nullable=False)
     

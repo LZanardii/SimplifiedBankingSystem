@@ -1,8 +1,5 @@
-from cgitb import text
 import tkinter as tk
-from tkinter import BOTTOM, LEFT, RIGHT, TOP, ttk
-from ast import Raise
-from http import client
+from tkinter import ttk
 import tkinter as tk
 from tkinter import messagebox
 import tkinter.ttk as ttk
@@ -13,10 +10,8 @@ from datetime import datetime
 from tkcalendar import DateEntry
 from utils import *
 import math
-  
 
-class tkinterApp(tk.Tk):
-
+class MyBankApp(tk.Tk):
     def __init__(self, *args, **kwargs):
          
         tk.Tk.__init__(self, *args, **kwargs)
@@ -28,11 +23,12 @@ class tkinterApp(tk.Tk):
   
         container.grid_rowconfigure(0, weight = 1)
         container.grid_columnconfigure(0, weight = 1)
+        logged_now = ""
         self.frames = {} 
   
-        for F in (HomePage, CadastroUsuario, CriarNovaConta, LoginConta):
+        for F in (HomePage, CadastroUsuario, CriarNovaConta, LoginConta, Logged, Deposito):
   
-            frame = F(container, self)
+            frame = F(container, self, logged_now)
   
             self.frames[F] = frame
   
@@ -43,11 +39,10 @@ class tkinterApp(tk.Tk):
     def show_frame(self, cont):
         frame = self.frames[cont]
         frame.tkraise()
-        
 class HomePage(tk.Frame):
     ctr = {}
     
-    def __init__(self, parent, controller) -> None:
+    def __init__(self, parent, controller, logged_now) -> None:
         tk.Frame.__init__(self, parent)
         self.create_widgets()
         
@@ -68,13 +63,12 @@ class HomePage(tk.Frame):
         self.create_widget(tk.Button, text='Criar nova conta', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(CriarNovaConta))
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Login em conta existente', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(LoginConta))
-
 class CadastroUsuario(tk.Frame):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
     cliente = {}
     ctr = {}
 
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, logged_now):
         tk.Frame.__init__(self, parent)
         
         self.cliente = {
@@ -136,15 +130,14 @@ class CadastroUsuario(tk.Frame):
         except Exception as e:
             messagebox.showwarning('Cuidado!', '''Erro ao cadastrar novo Cliente! Revise os dados inseridos.
 {}
-                                   '''.format(e)) 
-            
+                                   '''.format(e))         
 class CriarNovaConta(tk.Frame):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
     conn = engine.connect()
     conta_bancaria = {}
     ctr = {}
     
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, logged_now):
         tk.Frame.__init__(self, parent)
        
         self.conta_bancaria = {
@@ -193,10 +186,10 @@ class CriarNovaConta(tk.Frame):
                 Session = orm.sessionmaker(bind=self.engine)
                 self.session = Session()
                 client = self.session.query(model.Cliente.nome).where(model.Cliente.cpf == cpf)
-                test = client[0]
+                client[0]
                 try:
                     alreay_exists_account = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
-                    test_account = alreay_exists_account[0]
+                    alreay_exists_account[0]
                     messagebox.showwarning('Cuidado!', 'O cpf informado já possui uma conta cadastrada!')
                     self.session.close()
                     return False
@@ -244,22 +237,23 @@ class CriarNovaConta(tk.Frame):
         self.session.commit()
         self.session.close()
         messagebox.showinfo('Confirmação', 'A conta foi criada com sucesso!')
-
 class LoginConta(tk.Frame):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
     conn = engine.connect()
+    prt = {}
     ctr = {}
     login = {}
+    
+    logged = ""
 
-    cliente = {}
-    cliente_conta = {}
-
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, logged_now):
         tk.Frame.__init__(self, parent)
         self.login = {
             'cpf_cliente': tk.StringVar()
         }
+        self.prt = parent
         self.ctr = controller
+        self.create_widgets()
        
 
     def create_widget(self, widget_type, **kwargs):
@@ -271,18 +265,11 @@ class LoginConta(tk.Frame):
         return elem
     
     def create_widgets(self):
-        if (len(self.cliente_conta) < 0):
-            self.create_widget(tk.Label)
-            self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
-            self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
-            self.create_widget(tk.Label)
-            self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
-        elif (len(self.cliente_conta) > 0):
-            self.create_widget(tk.Label)
-            self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
-            self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
-            self.create_widget(tk.Label)
-            self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Informe o cpf para realizar login: ' )
+        self.create_widget(tk.Entry, textvariable=self.login.get('cpf_cliente') )
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Login', pady=5, border=3, command =self.validate_cpf_login)
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Retornar', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
         
@@ -296,26 +283,88 @@ class LoginConta(tk.Frame):
                 cliente = self.session.query(model.Cliente).where(model.Cliente.cpf == cpf)
                 cliente[0]
                 try:
-                    conta_cliente = self.session.query(model.ContaBancaria.cliente_id).where(model.ContaBancaria.cliente_id == cpf)
+                    conta_cliente = self.session.query(model.ContaBancaria.id).where(model.ContaBancaria.cliente_id == cpf)
                     conta_cliente[0]
-                    messagebox.showwarning('Sucesso!', 'blablabla')
-
+                    self.logged = conta_cliente[0]
+                    self.logged.replace("(", "").replace(")", "").replace(",", "")
+                    print(self.logged)
+                    messagebox.showwarning('Sucesso!', 'Login efetuado.')
                     self.session.close()
-                    return True
-                except Exception as e:
-                    print(e)
+                    try:
+                        self.showNext()
+                    except Exception as e:
+                        print(e)
+                except Exception:
                     messagebox.showwarning('Cuidado!', 'O cpf informado pertence a um cliente cadastrado, porém o mesmo não possui uma conta!')
                     self.session.close()
                     return False
-            except Exception as e:
-                print(e)
+            except Exception:
                 messagebox.showwarning('Cuidado!', 'CPF não cadastrado!')
                 self.session.close()
                 return False
         else:
             messagebox.showwarning('Warning', 'Insira um cpf válido!')
             return False 
+    def showNext(self):
+        self.ctr.show_frame(Logged)
+class Logged(tk.Frame):
+    prt = {}
+    ctr = {}
+    logged = ""
 
-app = tkinterApp()
+    def __init__(self, parent, controller, logged_now):
+        tk.Frame.__init__(self, parent)
+        self.prt = parent
+        self.ctr = controller
+        self.logged = logged_now
+        print(logged_now)
+        self.ctr = controller
+        self.create_widgets()
+    
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+
+    def create_widgets(self):
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Depósito', pady=5, border=3, command = lambda : self.ctr.show_frame(Deposito))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Saque', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Aplicar Juros', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Extrato', pady=5, border=3, command = lambda : self.ctr.show_frame(HomePage))
+class Deposito(tk.Frame):
+    ctr = {}
+
+    def __init__(self, parent, controller, logged_now):
+        tk.Frame.__init__(self, parent)
+        
+        self.ctr = controller
+        self.create_widgets()
+    
+    def create_widget(self, widget_type, **kwargs):
+        elem = widget_type(self)
+        for k, v in kwargs.items():
+            elem[k] = v
+
+        elem.pack(anchor='w', padx=(20, 0))
+        return elem
+
+    def create_widgets(self):
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Label, text='Nome')
+        # self.create_widget(tk.Entry, t)
+        # self.create_widget(tk.Label, text='CPF')
+        # self.create_widget(tk.Entry, textvariable=self.cliente.get('cpf'))
+        # self.create_widget(tk.Label, text='Sexo')
+
+
+
+app = MyBankApp()
 app.mainloop()
 
