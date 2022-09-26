@@ -38,6 +38,10 @@ class MyBankApp(tk.Tk):
     def show_frame(self, cont):
         frame = self.frames[cont]
         frame.tkraise()
+    
+    def sair(self):
+        self.destroy()
+
 class HomePage(tk.Frame):
     ctr = {}
     
@@ -62,6 +66,8 @@ class HomePage(tk.Frame):
         self.create_widget(tk.Button, text='Criar nova conta', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(CriarNovaConta))
         self.create_widget(tk.Label)
         self.create_widget(tk.Button, text='Operações', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.show_frame(Operacoes))
+        self.create_widget(tk.Label)
+        self.create_widget(tk.Button, text='Sair', pady=5, border=3, bg="#02c72a", command = lambda : self.ctr.sair())
 class CadastroUsuario(tk.Frame):
     engine = db.create_engine('sqlite:///myBank.db', echo=True)
     cliente = {}
